@@ -15,10 +15,12 @@ function love.load()
     player.x = 400
     player.y = 200
     player.speed = 0--250
-    player.acceleration = 0
+    player.acceleration = 1 
+    ship_acceleration = 1
+    ship_deceleration = -1 
     player.sprite = love.graphics.newImage('sprites/ship.png')
-    player.ship_facing_theta = 0
-    player.ship_forward_vector = {x=0,y=0}
+    player.ship_facing_theta = 2*math.pi
+    player.ship_forward_vector = {x=1,y=0}
 
     player.rotation_speed = 5
     background = {
@@ -40,34 +42,27 @@ function love.update(dt)
         player.ship_facing_theta = player.ship_facing_theta - player.rotation_speed*dt 
     end
 
+    -- default acceleration
+    player.acceleration = 0
+    -- up overrides it
     if love.keyboard.isDown("up") then
         -- update acceleration
-        if player.acceleration < 3 then
-            player.acceleration = player.acceleration + 1
-        end
+        player.acceleration = ship_acceleration
         -- recalculate forward vector
-        if player.acceleration >= 0 then
-            player.ship_forward_vector = vector_add(player.ship_forward_vector,{x=math.cos(player.ship_facing_theta), y=math.sin(player.ship_facing_theta)})
-        end
-    elseif love.keyboard.isDown("down") then
-        -- update acceleration
-        if player.acceleration > - 1 then
-            player.acceleration = player.acceleration - 0.5
-        end
-        -- recalculate forward vector
-        player.ship_forward_vector = vector_sub(player.ship_forward_vector,{x=-math.cos(player.ship_facing_theta), y=-math.sin(player.ship_facing_theta)})
-    else
-        player.acceleration = 0
+        player.ship_forward_vector = vector_add(player.ship_forward_vector,{x=math.cos(player.ship_facing_theta), y=math.sin(player.ship_facing_theta)})
     end
-    
 
-    -- Adding maximum speed
-    if player.speed >=-2  and player.speed <= 4 then
-        player.speed = player.speed + player.acceleration*dt
-    elseif player.speed > 0 then
-        player.speed = 4
-    else
-        player.speed = -2
+    -- down overrides it
+    if love.keyboard.isDown("down") then
+        -- update acceleration
+        player.acceleration = ship_deceleration
+        -- recalculate forward vector
+        player.ship_forward_vector = vector_add(player.ship_forward_vector,{x=math.cos(player.ship_facing_theta+math.pi), y=math.sin(player.ship_facing_theta+math.pi)})
+    end
+
+    -- Updating speed if max not reached
+    if player.speed >=-2 and player.speed <= 4 then
+        player.speed = player.speed + player.acceleration
     end
 
     -- Always update ship position
