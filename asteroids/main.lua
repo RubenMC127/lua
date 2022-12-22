@@ -14,13 +14,13 @@ function love.load()
     player = {} 
     player.x = 400
     player.y = 200
-    player.speed = 0--250
-    player.acceleration = 1 
-    ship_acceleration = 1
-    ship_deceleration = -1 
+    player.speed = {x=0,y=0}--250
+    player.acceleration = {x=0,y=0}
+    ship_acceleration = 1000
+    ship_deceleration = -1000 
     player.sprite = love.graphics.newImage('sprites/ship.png')
     player.ship_facing_theta = 2*math.pi
-    player.ship_forward_vector = {x=1,y=0}
+    --player.ship_forward_vector = {x=0,y=0}
 
     player.rotation_speed = 5
     background = {
@@ -43,31 +43,30 @@ function love.update(dt)
     end
 
     -- default acceleration
-    player.acceleration = 0
+    player.acceleration = {x=0,y=0}
     -- up overrides it
     if love.keyboard.isDown("up") then
         -- update acceleration
-        player.acceleration = ship_acceleration
-        -- recalculate forward vector
-        player.ship_forward_vector = vector_add(player.ship_forward_vector,{x=math.cos(player.ship_facing_theta), y=math.sin(player.ship_facing_theta)})
+        player.acceleration.x = ship_acceleration * math.cos(player.ship_facing_theta)
+        player.acceleration.y = ship_acceleration * math.sin(player.ship_facing_theta)
     end
 
     -- down overrides it
     if love.keyboard.isDown("down") then
-        -- update acceleration
-        player.acceleration = ship_deceleration
-        -- recalculate forward vector
-        player.ship_forward_vector = vector_add(player.ship_forward_vector,{x=math.cos(player.ship_facing_theta+math.pi), y=math.sin(player.ship_facing_theta+math.pi)})
+        player.acceleration.x = ship_deceleration * math.cos(player.ship_facing_theta)
+        player.acceleration.y = ship_deceleration * math.sin(player.ship_facing_theta)
     end
 
     -- Updating speed if max not reached
-    if player.speed >=-2 and player.speed <= 4 then
-        player.speed = player.speed + player.acceleration
-    end
+    --if player.speed >=-2 and player.speed <= 4 then
+    --    player.speed = player.speed + player.acceleration * dt
+    --end
+    player.speed.x = player.speed.x + player.acceleration.x * dt
+    player.speed.y = player.speed.y + player.acceleration.y * dt
 
     -- Always update ship position
     --local new_x = player.x + math.cos(player.ship_forward_vector) * player.speed * dt
-    local new_x = player.x + player.ship_forward_vector.x * player.speed * dt -- falta ajustar la velocidad al eje x
+    local new_x = player.x + player.speed.x * dt + 0.5*player.acceleration.x*dt*dt -- falta ajustar la velocidad al eje x
     if new_x > window.width then
         new_x = new_x - window.width
     elseif new_x < 0 then
@@ -76,7 +75,7 @@ function love.update(dt)
     player.x = new_x
 
     --local new_y = player.y + math.sin(player.ship_forward_vector) * player.speed * dt
-    local new_y = player.y + player.ship_forward_vector.y * player.speed * dt -- falta ajustar la velocidad al eje y
+    local new_y = player.y + player.speed.y * dt + 0.5*player.acceleration.y*dt*dt -- falta ajustar la velocidad al eje y
     if new_y > window.height then
         new_y = new_y - window.height
     elseif new_y < 0 then
