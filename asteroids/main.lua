@@ -11,29 +11,29 @@ local function vector_sub(v1,v2)
 end
 
 function love.load()
-    player = {} 
-    player.x = 400
-    player.y = 200
-    player.speed = {x=0,y=0}--250
-    player.acceleration = {x=0,y=0}
-    ship_acceleration = 1000
-    ship_deceleration = -1000 
-    player.sprite = love.graphics.newImage('sprites/ship.png')
-    player.ship_facing_theta = 2*math.pi
-    --player.ship_forward_vector = {x=0,y=0}
-
-    player.rotation_speed = 5
     background = {
         love.graphics.newImage('sprites/background_0.png'),
         love.graphics.newImage('sprites/background_1.png')
     }
+
     window = {
         width = 800,
         height = 600
     }
+
+    player = {} 
+    player.x = 400
+    player.y = 200
+    player.speed = {x=0,y=0}
+    player.acceleration = {x=0,y=0}
+    SHIP_ACCELERATION = 1000
+    SHIP_DECELERATION= -1000 
+    player.sprite = love.graphics.newImage('sprites/ship.png')
+    player.ship_facing_theta = 0
+    player.rotation_speed = 5
 end
 
-function love.update(dt)
+function update_ship_theta(dt)
     if love.keyboard.isDown("right") then
         player.ship_facing_theta = player.ship_facing_theta + player.rotation_speed*dt 
     end
@@ -41,14 +41,15 @@ function love.update(dt)
     if love.keyboard.isDown("left") then
         player.ship_facing_theta = player.ship_facing_theta - player.rotation_speed*dt 
     end
+end
 
-    -- default acceleration
+function update_player_acceleration()
     player.acceleration = {x=0,y=0}
     -- up overrides it
     if love.keyboard.isDown("up") then
         -- update acceleration
-        player.acceleration.x = ship_acceleration * math.cos(player.ship_facing_theta)
-        player.acceleration.y = ship_acceleration * math.sin(player.ship_facing_theta)
+        player.acceleration.x = SHIP_ACCELERATION * math.cos(player.ship_facing_theta)
+        player.acceleration.y = SHIP_ACCELERATION * math.sin(player.ship_facing_theta)
     end
 
     -- down overrides it
@@ -56,32 +57,52 @@ function love.update(dt)
         player.acceleration.x = ship_deceleration * math.cos(player.ship_facing_theta)
         player.acceleration.y = ship_deceleration * math.sin(player.ship_facing_theta)
     end
+end
 
+function update_player_speed(dt)
     -- Updating speed if max not reached
-    --if player.speed >=-2 and player.speed <= 4 then
-    --    player.speed = player.speed + player.acceleration * dt
-    --end
-    player.speed.x = player.speed.x + player.acceleration.x * dt
-    player.speed.y = player.speed.y + player.acceleration.y * dt
-
-    -- Always update ship position
-    --local new_x = player.x + math.cos(player.ship_forward_vector) * player.speed * dt
-    local new_x = player.x + player.speed.x * dt + 0.5*player.acceleration.x*dt*dt -- falta ajustar la velocidad al eje x
-    if new_x > window.width then
-        new_x = new_x - window.width
-    elseif new_x < 0 then
-        new_x = window.width + new_x
+    if player.speed.x >= -2000 and player.speed.x <= 4000 then
+        player.speed.x = player.speed.x + player.acceleration.x * dt
     end
-    player.x = new_x
-
-    --local new_y = player.y + math.sin(player.ship_forward_vector) * player.speed * dt
-    local new_y = player.y + player.speed.y * dt + 0.5*player.acceleration.y*dt*dt -- falta ajustar la velocidad al eje y
-    if new_y > window.height then
-        new_y = new_y - window.height
-    elseif new_y < 0 then
-        new_y = window.height + new_y
+    if player.speed.y >= -2000 and player.speed.y <= 4000 then
+        player.speed.y = player.speed.y + player.acceleration.y * dt
     end
-    player.y = new_y
+end
+
+function calculate_mrua_position(dt)
+    local destination = {x=0,y=0}
+    destination.x = player.x + player.speed.x * dt + 0.5*player.acceleration.x*dt*dt -- falta ajustar la velocidad al eje x
+    destination.y = player.y + player.speed.y * dt + 0.5*player.acceleration.y*dt*dt -- falta ajustar la velocidad al eje y
+    return destination
+end
+
+function adjust_position_to_boundaries(destination)
+    if destination.x > window.width then
+        destination.x = destination.x - window.width
+    elseif destination.x < 0 then
+        destination.x = window.width + destination.x
+    end
+    
+    if destination.y > window.height then
+        destination.y = destination.y - window.height
+    elseif destination.y < 0 then
+        destination.y = window.height + destination.y
+    end
+    return destination
+end
+
+function update_player_position(dt)
+    local destination = calculate_mrua_position(dt)
+    destination = adjust_position_to_boundaries(destination)
+    player.x = destination.x
+    player.y = destination.y
+end
+
+function love.update(dt)
+    update_ship_theta(dt)
+    update_player_acceleration()
+    update_player_speed(dt)
+    update_player_position(dt)
 end
 
 function love.draw()
