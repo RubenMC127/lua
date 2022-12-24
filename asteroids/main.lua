@@ -1,16 +1,39 @@
-local function vector_magnitude(v)
-    return math.sqrt(math.pow(v.x, 2) + math.pow(v.y, 2))
+function euclidean_distance(p1, p2)
+    return math.floor(math.sqrt(math.pow(p2.x - p1.x, 2) + math.pow(p2.y - p1.y, 2)))
 end
 
-local function vector_add(v1,v2)
+function vector_add(v1,v2)
     return {x=v1.x+v2.x, y=v1.y+v2.y}
 end
 
-local function vector_sub(v1,v2)
+function vector_sub(v1,v2)
     return {x=v1.x-v2.x, y=v1.y-v2.y}
 end
 
+function check_collision(object1, object2)
+    maxx1 = object1.x + object1.w
+    minx1 = object1.x - object1.w
+    maxy1 = object1.y + object1.h
+    miny1 = object1.y - object1.h
+    maxx2 = object2.x + object2.w
+    minx2 = object2.x - object2.w
+    maxy2 = object2.y + object2.h
+    miny2 = object2.y - object2.h
+
+    return (object1.x >= minx2 and object1.x <= maxx2 and
+           object1.y >= miny2 and object1.y <= maxy2) or
+           (object2.x >= minx1 and object2.x <= maxx1 and
+           object2.y >= miny1 and object2.y <= maxy1)
+end
+
 function love.load()
+    SHIP_ACCELERATION = 1000
+    SHIP_DECELERATION= -1000 
+    SHIP_CENTER_OFFSET = {x=24,y=24}
+    SHIP_SCALE = 2
+    BULLET_SPEED = 2000
+    BULLET_MAX_DISTANCE = 1500
+
     -- this filter setup removes white outline on the sprites
     love.graphics.setDefaultFilter("nearest","nearest")
     background = {
@@ -24,13 +47,13 @@ function love.load()
     }
     love.window.setMode(window.width, window.height)
 
+    bullets = {} 
+
     player = {} 
     player.x = 400
     player.y = 200
     player.speed = {x=0,y=0}
     player.acceleration = {x=0,y=0}
-    SHIP_ACCELERATION = 1000
-    SHIP_DECELERATION= -1000 
     player.sprite = love.graphics.newImage('sprites/ship_0.png')
     player.ship_facing_theta = 0
     player.rotation_speed = 5
@@ -101,21 +124,62 @@ function update_player_position(dt)
     player.y = destination.y
 end
 
-function love.update(dt)
+function move_player(dt)
     update_ship_theta(dt)
     update_player_acceleration()
     update_player_speed(dt)
     update_player_position(dt)
 end
 
+function love.update(dt)
+    move_player(dt)
+
+    for i, bullet in ipairs(bullets) do
+        if bullet.distance_traveled > BULLET_MAX_DISTANCE then
+            table.remove(bullets, i)
+        else
+            position = {x = bullet.x + bullet.vx * dt, y = bullet.y + bullet.vy * dt}
+            distance_traveled = bullet.distance_traveled + euclidean_distance(position, {x=bullet.x,y=bullet.y})
+            position = adjust_position_to_boundaries(position)
+            bullets[i] = {x = position.x, y = position.y,
+                          vx = bullet.vx, vy = bullet.vy, distance_traveled = distance_traveled}
+           if check_collision({x = position.x, y = position.y, w = 4, h = 4}, {x = player.x, y = player.y, w = 12, h = 12}) then
+                love.event.quit()
+           end
+        end
+    end
+
+end
+
 function love.draw()
     love.graphics.draw(background[1], 0, 0)
-    love.graphics.draw(player.sprite, player.x, player.y, player.ship_facing_theta, 2, 2, 24, 24)
+    love.graphics.draw(player.sprite, player.x, player.y, player.ship_facing_theta, SHIP_SCALE, SHIP_SCALE, SHIP_CENTER_OFFSET.x, SHIP_CENTER_OFFSET.y)
+    for k, bullet in pairs(bullets) do
+        love.graphics.setColor(255,255,255)
+        love.graphics.circle("fill", bullet.x, bullet.y, 4)
+    end
 end
 
 function love.keypressed(key, u)
 --Debug
-    if key == "rctrl" then --set to whatever key you want to use
-        debug.debug()
+    if key == "space" then --set to whatever key you want to use
+        -- MCU with offset for RIGHT CANNON, which needs vertical and horizontal offset
+        -- formulas: 
+        -- x = x + (r/2)*cos(Θ) + r*sin(Θ)*(1.5-cos(Θ)^2)
+        -- y = y + (r/2)*sin(Θ) - r*cos(Θ)*(1.5-sin(Θ)^2)
+        table.insert(bullets, {x = player.x + 12*math.cos(player.ship_facing_theta) + (24*math.sin(player.ship_facing_theta))*(1.5-math.pow(math.cos(player.ship_facing_theta),2)),
+                               y = player.y + 12*math.sin(player.ship_facing_theta) - (24*math.cos(player.ship_facing_theta))*(1.5-math.pow(math.sin(player.ship_facing_theta),2)),
+                    vx = BULLET_SPEED * math.cos(player.ship_facing_theta),
+                    vy = BULLET_SPEED * math.sin(player.ship_facing_theta),
+                    distance_traveled = 0})
+        -- MCU with offset for LEFT CANNON, which needs vertical and horizontal offset
+        -- formulas: 
+        -- x = x + (r/2)*cos(Θ) - r*sin(Θ)*(1.5-cos(Θ)^2)
+        -- y = y + (r/2)*sin(Θ) + r*cos(Θ)*(1.5-sin(Θ)^2)
+        table.insert(bullets, {x = player.x + 12*math.cos(player.ship_facing_theta) - (24*math.sin(player.ship_facing_theta))*(1.5-math.pow(math.cos(player.ship_facing_theta),2)),
+                               y = player.y + 12*math.sin(player.ship_facing_theta) + (24*math.cos(player.ship_facing_theta))*(1.5-math.pow(math.sin(player.ship_facing_theta),2)),
+                    vx = BULLET_SPEED * math.cos(player.ship_facing_theta),
+                    vy = BULLET_SPEED * math.sin(player.ship_facing_theta),
+                    distance_traveled = 0})
     end
 end
