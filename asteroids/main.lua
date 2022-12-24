@@ -11,15 +11,18 @@ local function vector_sub(v1,v2)
 end
 
 function love.load()
+    -- this filter setup removes white outline on the sprites
+    love.graphics.setDefaultFilter("nearest","nearest")
     background = {
         love.graphics.newImage('sprites/background_0.png'),
         love.graphics.newImage('sprites/background_1.png')
     }
 
     window = {
-        width = 800,
-        height = 600
+        width = 1920,
+        height = 1080
     }
+    love.window.setMode(window.width, window.height)
 
     player = {} 
     player.x = 400
@@ -28,7 +31,7 @@ function love.load()
     player.acceleration = {x=0,y=0}
     SHIP_ACCELERATION = 1000
     SHIP_DECELERATION= -1000 
-    player.sprite = love.graphics.newImage('sprites/ship.png')
+    player.sprite = love.graphics.newImage('sprites/ship_0.png')
     player.ship_facing_theta = 0
     player.rotation_speed = 5
 end
@@ -54,8 +57,8 @@ function update_player_acceleration()
 
     -- down overrides it
     if love.keyboard.isDown("down") then
-        player.acceleration.x = ship_deceleration * math.cos(player.ship_facing_theta)
-        player.acceleration.y = ship_deceleration * math.sin(player.ship_facing_theta)
+        player.acceleration.x = SHIP_DECELERATION * math.cos(player.ship_facing_theta)
+        player.acceleration.y = SHIP_DECELERATION * math.sin(player.ship_facing_theta)
     end
 end
 
@@ -107,7 +110,7 @@ end
 
 function love.draw()
     love.graphics.draw(background[1], 0, 0)
-    love.graphics.draw(player.sprite, player.x, player.y, player.ship_facing_theta, 0.5, 0.5, 60, 78)
+    love.graphics.draw(player.sprite, player.x, player.y, player.ship_facing_theta, 2, 2, 24, 24)
 end
 
 function love.keypressed(key, u)
