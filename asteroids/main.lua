@@ -33,6 +33,7 @@ function love.load()
     SHIP_SCALE = 2
     BULLET_SPEED = 2000
     BULLET_MAX_DISTANCE = 1500
+    left_shot = true
 
     -- this filter setup removes white outline on the sprites
     love.graphics.setDefaultFilter("nearest","nearest")
@@ -160,26 +161,55 @@ function love.draw()
     end
 end
 
-function love.keypressed(key, u)
---Debug
-    if key == "space" then --set to whatever key you want to use
+function calculate_bullet_origin_right_cannon()
         -- MCU with offset for RIGHT CANNON, which needs vertical and horizontal offset
         -- formulas: 
         -- x = x + (r/2)*cos(Θ) + r*sin(Θ)*(1.5-cos(Θ)^2)
         -- y = y + (r/2)*sin(Θ) - r*cos(Θ)*(1.5-sin(Θ)^2)
-        table.insert(bullets, {x = player.x + 12*math.cos(player.ship_facing_theta) + (24*math.sin(player.ship_facing_theta))*(1.5-math.pow(math.cos(player.ship_facing_theta),2)),
-                               y = player.y + 12*math.sin(player.ship_facing_theta) - (24*math.cos(player.ship_facing_theta))*(1.5-math.pow(math.sin(player.ship_facing_theta),2)),
-                    vx = BULLET_SPEED * math.cos(player.ship_facing_theta),
-                    vy = BULLET_SPEED * math.sin(player.ship_facing_theta),
-                    distance_traveled = 0})
-        -- MCU with offset for LEFT CANNON, which needs vertical and horizontal offset
-        -- formulas: 
-        -- x = x + (r/2)*cos(Θ) - r*sin(Θ)*(1.5-cos(Θ)^2)
-        -- y = y + (r/2)*sin(Θ) + r*cos(Θ)*(1.5-sin(Θ)^2)
-        table.insert(bullets, {x = player.x + 12*math.cos(player.ship_facing_theta) - (24*math.sin(player.ship_facing_theta))*(1.5-math.pow(math.cos(player.ship_facing_theta),2)),
-                               y = player.y + 12*math.sin(player.ship_facing_theta) + (24*math.cos(player.ship_facing_theta))*(1.5-math.pow(math.sin(player.ship_facing_theta),2)),
-                    vx = BULLET_SPEED * math.cos(player.ship_facing_theta),
-                    vy = BULLET_SPEED * math.sin(player.ship_facing_theta),
-                    distance_traveled = 0})
+    return {x = player.x + 12*math.cos(player.ship_facing_theta) + (24*math.sin(player.ship_facing_theta))*(1.5-math.pow(math.cos(player.ship_facing_theta),2)),
+            y = player.y + 12*math.sin(player.ship_facing_theta) - (24*math.cos(player.ship_facing_theta))*(1.5-math.pow(math.sin(player.ship_facing_theta),2))}
+end
+function calculate_bullet_origin_left_cannon()
+    -- MCU with offset for LEFT CANNON, which needs vertical and horizontal offset
+    -- formulas: 
+    -- x = x + (r/2)*cos(Θ) - r*sin(Θ)*(1.5-cos(Θ)^2)
+    -- y = y + (r/2)*sin(Θ) + r*cos(Θ)*(1.5-sin(Θ)^2)
+    return {x = player.x + 12*math.cos(player.ship_facing_theta) - (24*math.sin(player.ship_facing_theta))*(1.5-math.pow(math.cos(player.ship_facing_theta),2)),
+            y = player.y + 12*math.sin(player.ship_facing_theta) + (24*math.cos(player.ship_facing_theta))*(1.5-math.pow(math.sin(player.ship_facing_theta),2))}
+end
+
+function create_right_bullet()
+    local right_cannon= calculate_bullet_origin_right_cannon()
+    return {
+        x = right_cannon.x, y = right_cannon.y,
+        vx = BULLET_SPEED * math.cos(player.ship_facing_theta),
+        vy = BULLET_SPEED * math.sin(player.ship_facing_theta),
+        distance_traveled = 0
+    }
+end
+
+function create_left_bullet()
+    local left_cannon = calculate_bullet_origin_left_cannon()
+    return {
+        x = left_cannon.x, y= left_cannon.y,
+        vx = BULLET_SPEED * math.cos(player.ship_facing_theta),
+        vy = BULLET_SPEED * math.sin(player.ship_facing_theta),
+        distance_traveled = 0
+    }
+end
+
+function love.keypressed(key, u)
+    --Debug
+    if key == "space" then --set to whatever key you want to use
+        if left_shot then
+            local left_bullet = create_left_bullet()
+            table.insert(bullets, left_bullet)
+            left_shot = false
+        else
+            local right_bullet = create_right_bullet()
+            table.insert(bullets, right_bullet)
+            left_shot = true
+        end
     end
 end
+           
