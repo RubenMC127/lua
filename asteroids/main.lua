@@ -160,7 +160,7 @@ function love.load()
     SHIP_SCALE = 2
     BULLET_SPEED = 2000
     BULLET_MAX_DISTANCE = 1500
-    left_shot = true
+    shot_turn = "left"
 
     -- this filter setup removes white outline on the sprites
     love.graphics.setDefaultFilter("nearest","nearest")
@@ -199,14 +199,14 @@ end
 function love.keypressed(key, u)
     --Debug
     if key == "space" then --set to whatever key you want to use
-        if left_shot then
+        if shot_turn == "left" then
             local left_bullet = create_left_bullet()
             table.insert(bullets, left_bullet)
-            left_shot = false
+            shot_turn = "right"
         else
             local right_bullet = create_right_bullet()
             table.insert(bullets, right_bullet)
-            left_shot = true
+            shot_turn = "left"
         end
     end
 end
