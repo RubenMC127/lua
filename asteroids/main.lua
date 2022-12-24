@@ -26,39 +26,6 @@ function check_collision(object1, object2)
            object2.y >= miny1 and object2.y <= maxy1)
 end
 
-function love.load()
-    SHIP_ACCELERATION = 1000
-    SHIP_DECELERATION= -1000 
-    SHIP_CENTER_OFFSET = {x=24,y=24}
-    SHIP_SCALE = 2
-    BULLET_SPEED = 2000
-    BULLET_MAX_DISTANCE = 1500
-    left_shot = true
-
-    -- this filter setup removes white outline on the sprites
-    love.graphics.setDefaultFilter("nearest","nearest")
-    background = {
-        love.graphics.newImage('sprites/background_0.png'),
-        love.graphics.newImage('sprites/background_1.png')
-    }
-
-    window = {
-        width = 1920,
-        height = 1080
-    }
-    love.window.setMode(window.width, window.height)
-
-    bullets = {} 
-
-    player = {} 
-    player.x = 400
-    player.y = 200
-    player.speed = {x=0,y=0}
-    player.acceleration = {x=0,y=0}
-    player.sprite = love.graphics.newImage('sprites/ship_0.png')
-    player.ship_facing_theta = 0
-    player.rotation_speed = 5
-end
 
 function update_ship_theta(dt)
     if love.keyboard.isDown("right") then
@@ -131,10 +98,8 @@ function move_player(dt)
     update_player_speed(dt)
     update_player_position(dt)
 end
-
-function love.update(dt)
-    move_player(dt)
-
+    
+function move_bullets(dt)
     for i, bullet in ipairs(bullets) do
         if bullet.distance_traveled > BULLET_MAX_DISTANCE then
             table.remove(bullets, i)
@@ -148,16 +113,6 @@ function love.update(dt)
                 love.event.quit()
            end
         end
-    end
-
-end
-
-function love.draw()
-    love.graphics.draw(background[1], 0, 0)
-    love.graphics.draw(player.sprite, player.x, player.y, player.ship_facing_theta, SHIP_SCALE, SHIP_SCALE, SHIP_CENTER_OFFSET.x, SHIP_CENTER_OFFSET.y)
-    for k, bullet in pairs(bullets) do
-        love.graphics.setColor(255,255,255)
-        love.graphics.circle("fill", bullet.x, bullet.y, 4)
     end
 end
 
@@ -198,6 +153,49 @@ function create_left_bullet()
     }
 end
 
+function love.load()
+    SHIP_ACCELERATION = 1000
+    SHIP_DECELERATION= -1000 
+    SHIP_CENTER_OFFSET = {x=24,y=24}
+    SHIP_SCALE = 2
+    BULLET_SPEED = 2000
+    BULLET_MAX_DISTANCE = 1500
+    left_shot = true
+
+    -- this filter setup removes white outline on the sprites
+    love.graphics.setDefaultFilter("nearest","nearest")
+    background = {
+        love.graphics.newImage('sprites/background_0.png'),
+        love.graphics.newImage('sprites/background_1.png')
+    }
+
+    window = {
+        width = 1920,
+        height = 1080
+    }
+    love.window.setMode(window.width, window.height)
+
+    bullets = {} 
+
+    player = {} 
+    player.x = 400
+    player.y = 200
+    player.speed = {x=0,y=0}
+    player.acceleration = {x=0,y=0}
+    player.sprite = love.graphics.newImage('sprites/ship_0.png')
+    player.ship_facing_theta = 0
+    player.rotation_speed = 5
+end
+
+function love.draw()
+    love.graphics.draw(background[1], 0, 0)
+    love.graphics.draw(player.sprite, player.x, player.y, player.ship_facing_theta, SHIP_SCALE, SHIP_SCALE, SHIP_CENTER_OFFSET.x, SHIP_CENTER_OFFSET.y)
+    for k, bullet in pairs(bullets) do
+        love.graphics.setColor(255,255,255)
+        love.graphics.circle("fill", bullet.x, bullet.y, 4)
+    end
+end
+
 function love.keypressed(key, u)
     --Debug
     if key == "space" then --set to whatever key you want to use
@@ -212,4 +210,8 @@ function love.keypressed(key, u)
         end
     end
 end
-           
+
+function love.update(dt)
+    move_player(dt)
+    move_bullets(dt)
+end
