@@ -10,6 +10,14 @@ function vector_sub(v1,v2)
     return {x=v1.x-v2.x, y=v1.y-v2.y}
 end
 
+function table_length(t)
+    local length = 0
+    for _ in pairs(t) do 
+        length = length + 1
+    end
+    return length
+end
+
 function check_collision(object1, object2)
     maxx1 = object1.x + object1.w
     minx1 = object1.x - object1.w
@@ -154,6 +162,9 @@ function create_left_bullet()
 end
 
 function love.load()
+    -- setting random seed
+    math.randomseed(os.time())
+
     SHIP_ACCELERATION = 1000
     SHIP_DECELERATION= -1000 
     SHIP_CENTER_OFFSET = {x=24,y=24}
@@ -161,6 +172,14 @@ function love.load()
     BULLET_SPEED = 2000
     BULLET_MAX_DISTANCE = 1500
     shot_turn = "left"
+
+    ASTEROID_SPEED = 800
+    NUMBER_OF_ASTEROIDS = 10
+
+    asteroid_sprites = {
+        love.graphics.newImage('sprites/asteroid_0_small.png'),
+        love.graphics.newImage('sprites/asteroid_0_big.png'),
+    }
 
     -- this filter setup removes white outline on the sprites
     love.graphics.setDefaultFilter("nearest","nearest")
@@ -176,6 +195,7 @@ function love.load()
     love.window.setMode(window.width, window.height)
 
     bullets = {} 
+    asteroids = {} 
 
     player = {} 
     player.x = 400
@@ -194,6 +214,10 @@ function love.draw()
         love.graphics.setColor(255,255,255)
         love.graphics.circle("fill", bullet.x, bullet.y, 4)
     end
+
+    for k, asteroid in pairs(asteroids) do
+        love.graphics.draw(asteroid.sprite, asteroid.x, asteroid.y, asteroid.theta, asteroid.sx, asteroid.sy, asteroid.cx, asteroid.cy)
+    end
 end
 
 function love.keypressed(key, u)
@@ -211,7 +235,22 @@ function love.keypressed(key, u)
     end
 end
 
+function move_asteroids(dt)
+    if table_length(asteroids) < NUMBER_OF_ASTEROIDS then
+        table.insert(asteroids,{
+            sprite = asteroid_sprites[1], 
+            x = window.width*math.random(), y = window.height*math.random(),
+            theta = 0,
+            sx = 2,
+            sy = 2,
+            cx = 32,
+            cy = 32
+        })
+    end
+end
+
 function love.update(dt)
     move_player(dt)
     move_bullets(dt)
+    move_asteroids(dt)
 end
