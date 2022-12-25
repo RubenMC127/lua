@@ -305,7 +305,7 @@ end
 
 function love.update(dt)
     if game_over then
-        sleep(5)
+        sleep(3)
         love.event.quit()
     else
         move_player(dt)
