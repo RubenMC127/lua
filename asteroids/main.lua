@@ -4,7 +4,7 @@ end
 
 function random_outside_field(field_percentaje)
     local outside_value = 0.5
-    while outside_value> 0.2 or outside_value < 0.8 do
+    while outside_value> 0.2 and outside_value < 0.8 do
         outside_value = math.random()
     end
     return outside_value
