@@ -2,6 +2,14 @@ function euclidean_distance(p1, p2)
     return math.floor(math.sqrt(math.pow(p2.x - p1.x, 2) + math.pow(p2.y - p1.y, 2)))
 end
 
+function random_outside_field(field_percentaje)
+    local outside_value = 0.5
+    while outside_value> 0.2 or outside_value < 0.8 do
+        outside_value = math.random()
+    end
+    return outside_value
+end
+
 function vector_add(v1,v2)
     return {x=v1.x+v2.x, y=v1.y+v2.y}
 end
@@ -117,9 +125,15 @@ function move_bullets(dt)
             position = adjust_position_to_boundaries(position)
             bullets[i] = {x = position.x, y = position.y,
                           vx = bullet.vx, vy = bullet.vy, distance_traveled = distance_traveled}
-           if check_collision({x = position.x, y = position.y, w = 4, h = 4}, {x = player.x, y = player.y, w = 12, h = 12}) then
-                love.event.quit()
-           end
+            -- GAME TOO HARD LOL, REMOVED SELFSHOOT
+            --if check_collision({x = position.x, y = position.y, w = 4, h = 4}, {x = player.x, y = player.y, w = 12, h = 12}) then
+            --     love.event.quit()
+            --end
+            for i, asteroid in ipairs(asteroids) do
+                if check_collision({x = position.x, y = position.y, w = 4, h = 4}, {x = asteroid.x, y = asteroid.y, w = asteroid.cx, h = asteroid.cy}) then
+                    table.remove(asteroids,i)
+                end
+            end
         end
     end
 end
@@ -173,7 +187,8 @@ function love.load()
     BULLET_MAX_DISTANCE = 1500
     shot_turn = "left"
 
-    ASTEROID_SPEED = 800
+    ASTEROID_MAX_SPEED = 300
+    ASTEROID_CENTER_OFFSET = {x = 32, y = 32}
     NUMBER_OF_ASTEROIDS = 10
 
     asteroid_sprites = {
@@ -200,6 +215,8 @@ function love.load()
     player = {} 
     player.x = 400
     player.y = 200
+    player.cx = SHIP_CENTER_OFFSET.x
+    player.cy = SHIP_CENTER_OFFSET.y
     player.speed = {x=0,y=0}
     player.acceleration = {x=0,y=0}
     player.sprite = love.graphics.newImage('sprites/ship_0.png')
@@ -209,13 +226,13 @@ end
 
 function love.draw()
     love.graphics.draw(background[1], 0, 0)
-    love.graphics.draw(player.sprite, player.x, player.y, player.ship_facing_theta, SHIP_SCALE, SHIP_SCALE, SHIP_CENTER_OFFSET.x, SHIP_CENTER_OFFSET.y)
+    love.graphics.draw(player.sprite, player.x, player.y, player.ship_facing_theta, SHIP_SCALE, SHIP_SCALE, player.cx, player.cy)
     for k, bullet in pairs(bullets) do
         love.graphics.setColor(255,255,255)
         love.graphics.circle("fill", bullet.x, bullet.y, 4)
     end
 
-    for k, asteroid in pairs(asteroids) do
+    for k, asteroid in ipairs(asteroids) do
         love.graphics.draw(asteroid.sprite, asteroid.x, asteroid.y, asteroid.theta, asteroid.sx, asteroid.sy, asteroid.cx, asteroid.cy)
     end
 end
@@ -239,13 +256,32 @@ function move_asteroids(dt)
     if table_length(asteroids) < NUMBER_OF_ASTEROIDS then
         table.insert(asteroids,{
             sprite = asteroid_sprites[1], 
-            x = window.width*math.random(), y = window.height*math.random(),
+            x = window.width*random_outside_field(), y = window.height*random_outside_field(),
+            vx = ASTEROID_MAX_SPEED*math.random(40,100)/100, vy = ASTEROID_MAX_SPEED*math.random(70,100)/100,
             theta = 0,
             sx = 2,
             sy = 2,
-            cx = 32,
-            cy = 32
+            cx = ASTEROID_CENTER_OFFSET.x,
+            cy = ASTEROID_CENTER_OFFSET.y
         })
+    end
+
+    for i, asteroid in ipairs(asteroids) do
+        position = {x = asteroid.x + asteroid.vx * dt, y = asteroid.y + asteroid.vy * dt}
+        position = adjust_position_to_boundaries(position)
+        asteroids[i] = {
+            sprite = asteroid_sprites[1], 
+            x = position.x, y = position.y,
+            vx = asteroid.vx, vy = asteroid.vy,
+            theta = asteroid.theta,
+            sx = asteroid.sx,
+            sy = asteroid.sy,
+            cx = asteroid.cx,
+            cy = asteroid.cy
+        }
+        if check_collision({x = position.x, y = position.y, w = asteroid.cx, h = asteroid.cy}, {x = player.x, y = player.y, w = player.cx, h = player.cy}) then
+            love.event.quit()
+        end
     end
 end
 
